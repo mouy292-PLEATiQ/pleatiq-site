@@ -82,6 +82,101 @@ const ProductCard = ({ title, badge, desc }) => (
     </div>
   </div>
 );
+function PriceCalculator() {
+  const PRICES = {
+    "บานเดี่ยว": { "สีขาว": 990, "สีดำ": 1190, "สีไม้": 1290 },
+    "บานคู่": { "สีขาว": 1350, "สีดำ": 1450, "สีไม้": 1550 },
+    "บานอิสระ": { "สีขาว": 1550, "สีดำ": 1650, "สีไม้": 1750 },
+  };
+
+  const [width, setWidth] = React.useState(100);
+  const [height, setHeight] = React.useState(200);
+  const [type, setType] = React.useState("บานเดี่ยว");
+  const [color, setColor] = React.useState("สีขาว");
+
+  const sqm = (width * height) / 10000;
+  const price = PRICES[type][color] * sqm;
+  const fmt = (n) => n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+
+  return (
+    <Section id="calculator" className="py-12">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl md:text-3xl font-semibold">
+          คำนวณราคา <span className="text-[#FF6B35]">มุ้งจีบ PLEATiQ</span>
+        </h2>
+        <p className="text-gray-600 mt-2">
+          กรอกขนาด <b>กว้าง × สูง (ซม.)</b> เพื่อดูราคาประมาณ
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Input */}
+        <div className="border rounded-2xl bg-white p-6 shadow-sm">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm text-gray-600">กว้าง (ซม.)</label>
+              <input
+                type="number"
+                min="1"
+                value={width}
+                onChange={(e) => setWidth(Number(e.target.value))}
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">สูง (ซม.)</label>
+              <input
+                type="number"
+                min="1"
+                value={height}
+                onChange={(e) => setHeight(Number(e.target.value))}
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">ชนิดบาน</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+              >
+                {Object.keys(PRICES).map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">สี</label>
+              <select
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+              >
+                {Object.keys(PRICES["บานเดี่ยว"]).map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Result */}
+        <div className="border rounded-2xl bg-white p-6 shadow-sm text-center">
+          <h3 className="font-semibold text-lg mb-3">ราคารวมโดยประมาณ</h3>
+          <div className="text-4xl font-bold text-[#FF6B35] mb-2">{fmt(price)} บาท</div>
+          <p className="text-gray-500 text-sm">
+            (พื้นที่ {fmt(sqm)} ตร.ม. × ราคา {PRICES[type][color]} บาท/ตร.ม.)
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2 justify-center">
+            <a href="https://line.me/R/ti/p/@SJ2550" className="inline-flex items-center rounded-xl px-5 py-2 bg-[#FF6B35] text-white shadow">
+              ส่งขนาดนี้ให้ร้านประเมินจริง
+            </a>
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
 
 export default function Page() {
   return (
@@ -186,6 +281,8 @@ export default function Page() {
           <ProductCard title="PLEATiQ Custom" badge="สั่งทำพิเศษ" desc="งานขนาดพิเศษ มุมเฉียง แนวเอียง หรือบานคู่ เราออกแบบและติดตั้งให้" />
         </div>
       </Section>
+{/* Calculator */}
+<PriceCalculator />
 
       {/* Gallery (placeholders) */}
       <Section id="gallery" className="py-12">
@@ -240,4 +337,3 @@ export default function Page() {
     </div>
   );
 }
-
