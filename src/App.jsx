@@ -83,125 +83,269 @@ const ProductCard = ({ title, badge, desc }) => (
   </div>
 );
 function PriceCalculator() {
+  // ── ราคาพื้นฐาน/ตร.ม. ──
   const PRICES = {
     "บานเดี่ยว": { 
-      "สีขาว": 990, 
-      "สีดำ": 1190, 
-      "สีไม้สักน้ำตาลเข้ม": 1290, 
-      "สีไม้สักน้ำตาลอ่อน": 1290, 
-      "สีเทาซาฮาร่า": 1290, 
-      "สีเทาซาฮาร่าเงิน": 1290, 
-      "สีอลูมิเนียม": 1290, 
-      "สีน้ำตาล": 1290, 
-      "สีน้ำตาลแดง": 1290 
+      "สีขาว": 990, "สีดำ": 1190,
+      "สีไม้สักน้ำตาลเข้ม": 1290, "สีไม้สักน้ำตาลอ่อน": 1290,
+      "สีเทาซาฮาร่า": 1290, "สีเทาซาฮาร่าเงิน": 1290,
+      "สีอลูมิเนียม": 1290, "สีน้ำตาล": 1290, "สีน้ำตาลแดง": 1290,
     },
     "บานคู่": { 
-      "สีขาว": 1350, 
-      "สีดำ": 1450,
-      "สีไม้สักน้ำตาลเข้ม": 1550, 
-      "สีไม้สักน้ำตาลอ่อน": 1550, 
-      "สีเทาซาฮาร่า": 1550, 
-      "สีเทาซาฮาร่าเงิน": 1550, 
-      "สีอลูมิเนียม": 1550, 
-      "สีน้ำตาล": 1550, 
-      "สีน้ำตาลแดง": 1550 
+      "สีขาว": 1350, "สีดำ": 1450,
+      "สีไม้สักน้ำตาลเข้ม": 1550, "สีไม้สักน้ำตาลอ่อน": 1550,
+      "สีเทาซาฮาร่า": 1550, "สีเทาซาฮาร่าเงิน": 1550,
+      "สีอลูมิเนียม": 1550, "สีน้ำตาล": 1550, "สีน้ำตาลแดง": 1550,
     },
     "บานอิสระ": { 
-      "สีขาว": 1550, 
-      "สีดำ": 1650, 
-      "สีไม้สักน้ำตาลเข้ม": 1750, 
-      "สีไม้สักน้ำตาลอ่อน": 1750, 
-      "สีเทาซาฮาร่า": 1750, 
-      "สีเทาซาฮาร่าเงิน": 1750, 
-      "สีอลูมิเนียม": 1750, 
-      "สีน้ำตาล": 1750, 
-      "สีน้ำตาลแดง": 1750 
+      "สีขาว": 1550, "สีดำ": 1650,
+      "สีไม้สักน้ำตาลเข้ม": 1750, "สีไม้สักน้ำตาลอ่อน": 1750,
+      "สีเทาซาฮาร่า": 1750, "สีเทาซาฮาร่าเงิน": 1750,
+      "สีอลูมิเนียม": 1750, "สีน้ำตาล": 1750, "สีน้ำตาลแดง": 1750,
     },
   };
 
+  // ── ประเภทสินค้า (บวกเพิ่มต่อ ตร.ม.) + รูปตัวอย่าง (ไว้ใน /public) ──
+  const PRODUCT_TYPES = {
+    "🪟 PLEATiQ - Air (ธรรมดา)":                   { extra: 0,   image: "/pleatiq-air.png" },
+    "🐝 PLEATiQ - Blackout":                        { extra: 200, image: "/pleatiq-blackout.png" },
+    "✨ PLEATiQ - DUO (ม่านจีบ Honeycomb 2 in 1)": { extra: 400, image: "/pleatiq-duo.png" },
+  };
 
-  const [width, setWidth] = React.useState(100);
-  const [height, setHeight] = React.useState(200);
-  const [type, setType] = React.useState("บานเดี่ยว");
-  const [color, setColor] = React.useState("สีขาว");
+  // ── สีเฟรม (จัดหมวด + swatch) ──
+  const FRAME_GROUPS = {
+    "มาตรฐาน": ["สีขาว","สีดำ"],
+    "โทนไม้": ["สีไม้สักน้ำตาลเข้ม","สีไม้สักน้ำตาลอ่อน","สีน้ำตาล","สีน้ำตาลแดง"],
+    "โทนเทา": ["สีเทาซาฮาร่า","สีเทาซาฮาร่าเงิน"],
+    "พิเศษ": ["สีอลูมิเนียม"],
+  };
+  const FRAME_HEX = {
+    "สีขาว": "#FFFFFF",
+    "สีดำ": "#1A1A1A",
+    "สีไม้สักน้ำตาลเข้ม": "#6B3F2B",
+    "สีไม้สักน้ำตาลอ่อน": "#B9855A",
+    "สีน้ำตาล": "#8B5A2B",
+    "สีน้ำตาลแดง": "#7A3E2E",
+    "สีเทาซาฮาร่า": "#8E8F91",
+    "สีเทาซาฮาร่าเงิน": "#B6B8BB",
+    "สีอลูมิเนียม": "#BFC6CE",
+  };
 
-  const sqm = (width * height) / 10000;
-  const price = PRICES[type][color] * sqm;
-  const fmt = (n) => n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  // ── สีม่าน/ตาข่าย (ตามที่หมวยให้มา) ──
+  const MESH_OPTIONS = [
+    { name: "ขาว",        hex: "#F6F6F6" },
+    { name: "ขาว ซีทรู",  hex: "#F6F6F6", pattern: "dot" }, // ทำให้ต่างด้วย pattern เล็กน้อย
+    { name: "ดำ",         hex: "#1A1A1A" },
+    { name: "เทา",        hex: "#9EA3A8" },
+    { name: "น้ำตาล",     hex: "#8B5A2B" },
+    { name: "เหลือง",     hex: "#F2C84B" },
+    { name: "เหลืองเข้ม", hex: "#D8A300" },
+  ];
+
+  // ── state ──
+  const [product, setProduct] = React.useState("🪟 PLEATiQ - Air (ธรรมดา)");
+  const [type, setType]       = React.useState("บานเดี่ยว");
+  const [frame, setFrame]     = React.useState("สีขาว");
+  const [mesh, setMesh]       = React.useState("ขาว");
+  const [width, setWidth]     = React.useState(100);
+  const [height, setHeight]   = React.useState(200);
+
+  // ── คำนวณ ──
+  const sqm      = Math.max(0, (width * height) / 10000);
+  const baseUnit = PRICES[type]?.[frame] ?? 0;
+  const extra    = PRODUCT_TYPES[product]?.extra ?? 0; // Blackout/DUO จะบวกเพิ่มตรงนี้
+  const unit     = baseUnit + extra;
+  const price    = unit * sqm;
+  const fmt      = (n) => n.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const availableFrames = Object.keys(PRICES[type] || {});
+  const currentFrameGroup =
+    Object.keys(FRAME_GROUPS).find(g => FRAME_GROUPS[g].includes(frame)) ?? "มาตรฐาน";
 
   return (
     <Section id="calculator" className="py-12">
       <div className="text-center mb-8">
         <h2 className="text-2xl md:text-3xl font-semibold">
-          คำนวณราคา <span className="text-[#FF6B35]">มุ้งจีบ PLEATiQ</span>
+          คำนวณราคา <span className="text-[#FF6B35]">PLEATiQ</span> (Air / Blackout / DUO)
         </h2>
         <p className="text-gray-600 mt-2">
-          กรอกขนาด <b>กว้าง × สูง (ซม.)</b> เพื่อดูราคาประมาณ
+          เลือกประเภทสินค้า ชนิดบาน สีเฟรม และสีม่าน จากนั้นกรอก <b>กว้าง×สูง (ซม.)</b> ระบบจะคำนวณอัตโนมัติ
         </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Input */}
-        <div className="border rounded-2xl bg-white p-6 shadow-sm">
-          <div className="grid grid-cols-2 gap-3">
+        {/* ฟอร์มเลือก */}
+        <div className="border rounded-2xl bg-white p-6 shadow-sm space-y-4">
+          {/* ประเภทสินค้า */}
+          <div>
+            <label className="text-sm text-gray-600">ประเภทสินค้า</label>
+            <select
+              value={product}
+              onChange={(e) => setProduct(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 mt-1"
+            >
+              {Object.keys(PRODUCT_TYPES).map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+
+            {/* รูปตัวอย่าง (ซ่อนถ้าไม่มีไฟล์) */}
+            <div className="mt-3">
+              <img
+                src={PRODUCT_TYPES[product].image}
+                alt={product}
+                className="w-full h-40 object-cover rounded-lg border shadow-sm"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+              <p className="text-xs text-center text-gray-500 mt-1">ตัวอย่าง: {product}</p>
+            </div>
+          </div>
+
+          {/* ชนิดบาน */}
+          <div>
+            <label className="text-sm text-gray-600">ชนิดบาน</label>
+            <select
+              value={type}
+              onChange={(e) => {
+                const t = e.target.value;
+                setType(t);
+                if (!Object.keys(PRICES[t]).includes(frame)) {
+                  setFrame(Object.keys(PRICES[t])[0]);
+                }
+              }}
+              className="w-full border rounded-lg px-3 py-2 mt-1"
+            >
+              {Object.keys(PRICES).map((t) => (
+                <option key={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* สีเฟรม */}
+          <div>
+            <label className="text-sm text-gray-600">สีเฟรม</label>
+            <select
+              value={frame}
+              onChange={(e) => setFrame(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 mt-1"
+            >
+              {Object.entries(FRAME_GROUPS).map(([group, items]) => {
+                const filtered = items.filter(c => availableFrames.includes(c));
+                if (!filtered.length) return null;
+                return (
+                  <optgroup key={group} label={`— ${group} —`}>
+                    {filtered.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </optgroup>
+                );
+              })}
+            </select>
+
+            {/* swatch เฟรม */}
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-block w-5 h-5 rounded border"
+                    style={{ backgroundColor: FRAME_HEX[frame] || "#DDD" }} />
+              <span className="text-xs text-gray-600">ตัวอย่างสีเฟรม: {frame}</span>
+            </div>
+
+            {/* swatch-set เฟรม (หมวดเดียวกัน) */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              {FRAME_GROUPS[currentFrameGroup]
+                .filter(c => availableFrames.includes(c))
+                .map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setFrame(c)}
+                    className={`flex items-center gap-1 px-2 py-1 rounded border text-xs
+                                ${c===frame ? 'ring-2 ring-[#FF6B35] border-[#FF6B35] bg-white' : 'hover:bg-slate-50'}`}
+                    title={c}
+                  >
+                    <span className="inline-block w-4 h-4 rounded border"
+                          style={{ backgroundColor: FRAME_HEX[c] || '#DDD' }} />
+                    {c.replace('สี','')}
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          {/* สีม่าน/ตาข่าย */}
+          <div>
+            <label className="text-sm text-gray-600">สีม่าน/ตาข่าย</label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {MESH_OPTIONS.map(m => (
+                <button
+                  key={m.name}
+                  type="button"
+                  onClick={() => setMesh(m.name)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded border text-sm
+                              ${m.name===mesh ? 'ring-2 ring-[#FF6B35] border-[#FF6B35] bg-white' : 'hover:bg-slate-50'}`}
+                  title={m.name}
+                >
+                  <span
+                    className="inline-block w-5 h-5 rounded border"
+                    style={{
+                      background: m.pattern === "dot"
+                        ? `radial-gradient(#bbb 1px, ${m.hex} 1px)`
+                        : m.hex,
+                      backgroundSize: m.pattern === "dot" ? "6px 6px" : undefined,
+                    }}
+                  />
+                  {m.name}
+                </button>
+              ))}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">*สีม่านไม่บวกเพิ่มราคาเพิ่มเติม</div>
+          </div>
+
+          {/* ขนาด */}
+          <div className="grid grid-cols-2 gap-3 mt-2">
             <div>
               <label className="text-sm text-gray-600">กว้าง (ซม.)</label>
-              <input
-                type="number"
-                min="1"
-                value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-              />
+              <input type="number" min="1" value={width}
+                     onChange={(e) => setWidth(Number(e.target.value))}
+                     className="w-full border rounded-lg px-3 py-2 mt-1" />
             </div>
             <div>
               <label className="text-sm text-gray-600">สูง (ซม.)</label>
-              <input
-                type="number"
-                min="1"
-                value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">ชนิดบาน</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-              >
-                {Object.keys(PRICES).map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">สี</label>
-              <select
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-              >
-                {Object.keys(PRICES["บานเดี่ยว"]).map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
+              <input type="number" min="1" value={height}
+                     onChange={(e) => setHeight(Number(e.target.value))}
+                     className="w-full border rounded-lg px-3 py-2 mt-1" />
             </div>
           </div>
         </div>
 
-        {/* Result */}
-        <div className="border rounded-2xl bg-white p-6 shadow-sm text-center">
-          <h3 className="font-semibold text-lg mb-3">ราคารวมโดยประมาณ</h3>
-          <div className="text-4xl font-bold text-[#FF6B35] mb-2">{fmt(price)} บาท</div>
-          <p className="text-gray-500 text-sm">
-            (พื้นที่ {fmt(sqm)} ตร.ม. × ราคา {PRICES[type][color]} บาท/ตร.ม.)
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2 justify-center">
-            <a href="https://line.me/R/ti/p/@SJ2550" className="inline-flex items-center rounded-xl px-5 py-2 bg-[#FF6B35] text-white shadow">
+        {/* ผลลัพธ์ */}
+        <div className="border rounded-2xl bg-white p-6 shadow-sm">
+          <div className="text-sm text-gray-600">พื้นที่ (ตร.ม.)</div>
+          <div className="text-2xl font-semibold">{fmt(sqm)}</div>
+
+          <div className="mt-4 space-y-2 text-sm text-gray-700">
+            <div className="flex justify-between"><span>ประเภทสินค้า</span><span>{product}</span></div>
+            <div className="flex justify-between"><span>ชนิดบาน</span><span>{type}</span></div>
+            <div className="flex justify-between"><span>สีเฟรม</span><span>{frame}</span></div>
+            <div className="flex justify-between"><span>สีม่าน/ตาข่าย</span><span>{mesh}</span></div>
+            <hr />
+            <div className="flex justify-between"><span>ราคาพื้นฐาน/ตร.ม.</span><span>{fmt(baseUnit)} บาท</span></div>
+            <div className="flex justify-between"><span>เพิ่มตามประเภทสินค้า</span><span>+{fmt(extra)} บาท/ตร.ม.</span></div>
+            <div className="flex justify-between font-medium"><span>ราคาสุทธิ/ตร.ม.</span><span>{fmt(unit)} บาท</span></div>
+            <div className="flex justify-between text-lg font-semibold">
+              <span>ราคารวมโดยประมาณ</span><span className="text-[#FF6B35]">{fmt(price)} บาท</span>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <a href="https://line.me/R/ti/p/@SJ2550" className="inline-flex items-center rounded-xl px-4 py-2 bg-[#FF6B35] text-white shadow">
               ส่งขนาดนี้ให้ร้านประเมินจริง
             </a>
+            <a href="tel:0818712970" className="inline-flex items-center rounded-xl px-4 py-2 border">
+              โทร 081-871-2970
+            </a>
+          </div>
+
+          <div className="text-xs text-gray-500 mt-3">
+            *ราคาโดยประมาณ อาจเปลี่ยนตามหน้างาน/อุปกรณ์จริง • DUO +400/ตร.ม. • Blackout +200/ตร.ม. • สีม่านไม่บวกเพิ่ม
           </div>
         </div>
       </div>
