@@ -106,9 +106,10 @@ function PriceCalculator() {
   };
 
   // --- ส่วนต่างต่อ ตร.ม. ของสินค้า ---
+  // Air = 0, BLACKOUT = +200, DUO = +400
   const PRODUCT_DELTA = { Air: 0, BLACKOUT: 200, DUO: 400 };
 
-  // --- สีเฟรม: แบ่งหมวด +โค้ดสี (สำหรับ swatch) ---
+  // --- สีเฟรม (แบ่งหมวด + swatch) ---
   const FRAME_GROUPS = {
     "มาตรฐาน": ["สีขาว","สีดำ"],
     "โทนไม้": ["สีไม้สักน้ำตาลเข้ม","สีไม้สักน้ำตาลอ่อน","สีน้ำตาล","สีน้ำตาลแดง"],
@@ -127,25 +128,40 @@ function PriceCalculator() {
     "สีอลูมิเนียม": "#BFC6CE",
   };
 
-  // --- สีผ้า/ตาข่าย ---
-  const MESH_FULL = ["ขาว", "ขาว ซีทรู", "ดำ", "เทา", "น้ำตาล", "เหลือง", "เหลืองเข้ม"];
-  const MESH_ALLOWED_FOR_AIR = ["ดำ", "เทา", "ขาว ซีทรู"]; // Air เลือกได้เท่านี้
+  // --- สีมุ้ง (Mesh) ---
+  const MESH_FOR_AIR = ["ดำ", "เทา", "ขาว ซีทรู"]; // Air จำกัด 3 สี
+  const MESH_FOR_DUO = MESH_FOR_AIR;              // DUO (ส่วนมุ้ง) ใช้ชุดเดียวกับ Air
+
+  // --- สีม่าน (Blind) — เพิ่ม "ฟ้า" ตามที่แจ้ง ---
+  const BLIND_COLORS = ["ขาว","ดำ","เทา","น้ำตาล","เหลือง","เหลืองเข้ม","ขาว ซีทรู","ฟ้า"];
+
+  // --- รูปตัวอย่างสินค้า ---
+  const PRODUCT_IMAGES = {
+    Air: "/pleatiq-air.png",
+    BLACKOUT: "/pleatiq-blackout.png",
+    DUO: "/pleatiq-duo.png",
+  };
 
   // --- state ---
   const [product, setProduct] = React.useState("Air"); // Air | BLACKOUT | DUO
   const [type, setType] = React.useState("บานเดี่ยว");
   const [frame, setFrame] = React.useState("สีขาว");
-  const [mesh, setMesh] = React.useState("ขาว ซีทรู"); // default ให้สอดคล้อง Air
+
+  // แยก state มุ้ง/ม่าน ชัดเจน
+  const [meshColor, setMeshColor] = React.useState("ขาว ซีทรู");
+  const [blindColor, setBlindColor] = React.useState("ขาว");
+
   const [width, setWidth] = React.useState(100);
   const [height, setHeight] = React.useState(200);
   const [panels, setPanels] = React.useState(1);
-  const [applyMin, setApplyMin] = React.useState(true); // ขั้นต่ำ 500/บาน
+  const [applyMin, setApplyMin] = React.useState(true);
+  const [imgMissing, setImgMissing] = React.useState(false);
 
-  // --- คำนวณ ---
+  // --- คำนวณราคา ---
   const sqmPerPanel = (width * height) / 10000;
   const totalSqm = sqmPerPanel * panels;
   const unitAir = PRICES[type]?.[frame] ?? 0;
-  const unit = unitAir + (PRODUCT_DELTA[product] ?? 0); // ราคาต่อ ตร.ม. ของสินค้า
+  const unit = unitAir + (PRODUCT_DELTA[product] ?? 0);
   const subTotal = unit * totalSqm;
   const minCharge = applyMin ? Math.max(0, panels * 500 - subTotal) : 0;
   const grandTotal = subTotal + minCharge;
@@ -154,12 +170,16 @@ function PriceCalculator() {
   // --- ตัวช่วย UI ---
   const availableFrames = Object.keys(PRICES[type] || {});
   const currentFrameGroup = Object.keys(FRAME_GROUPS).find(g => FRAME_GROUPS[g].includes(frame)) || "มาตรฐาน";
-  const meshOptions = product === "Air" ? MESH_ALLOWED_FOR_AIR : MESH_FULL;
+  const previewSrc = PRODUCT_IMAGES[product];
 
-  // ถ้าเปลี่ยนเป็น Air แล้วสีม่านปัจจุบันไม่เข้าเกณฑ์ → reset ให้อัตโนมัติ
+  // เมื่อเปลี่ยนรุ่น → รีเซ็ตค่าส่วนที่จำกัด
   React.useEffect(() => {
-    if (product === "Air" && !MESH_ALLOWED_FOR_AIR.includes(mesh)) {
-      setMesh("ขาว ซีทรู");
+    setImgMissing(false);
+    if (product === "Air" && !MESH_FOR_AIR.includes(meshColor)) {
+      setMeshColor("ขาว ซีทรู");
+    }
+    if (product === "DUO" && !MESH_FOR_DUO.includes(meshColor)) {
+      setMeshColor("เทา");
     }
   }, [product]);
 
@@ -170,14 +190,14 @@ function PriceCalculator() {
           คำนวณราคา <span className="text-[#FF6B35]">PLEATiQ</span>
         </h2>
         <p className="text-gray-600 mt-2">
-          เลือกสินค้า ชนิดบาน สีเฟรม และ{product === "Air" ? "สีมุ้ง (เฉพาะ ดำ/เทา/ขาวซีทรู)" : "สีม่าน/ตาข่าย"} แล้วกรอก <b>กว้าง×สูง (ซม.)</b>
+          เลือกสินค้า ชนิดบาน สีเฟรม และสี{product==="Air" ? "มุ้ง" : product==="BLACKOUT" ? "ม่าน" : "มุ้ง + ม่าน"} แล้วกรอก <b>กว้าง×สูง (ซม.)</b>
         </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* ฟอร์ม */}
+        {/* ฟอร์มฝั่งซ้าย */}
         <div className="border rounded-2xl bg-white p-6 shadow-sm space-y-4">
-          {/* สินค้า */}
+          {/* สินค้า + Preview */}
           <div>
             <label className="text-sm text-gray-600">สินค้า</label>
             <select
@@ -189,6 +209,38 @@ function PriceCalculator() {
               <option>BLACKOUT</option>
               <option>DUO</option>
             </select>
+
+            <div className="mt-3">
+              <div className="relative rounded-xl overflow-hidden border aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200">
+                {!imgMissing && (
+                  <img
+                    src={previewSrc}
+                    alt={`ตัวอย่าง ${product}`}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgMissing(true)}
+                  />
+                )}
+                {imgMissing && (
+                  <div className="absolute inset-0 grid place-items-center text-xs text-gray-500">
+                    อัปโหลดรูปไปที่ <b className="mx-1">/public{previewSrc}</b>
+                  </div>
+                )}
+                <div className="absolute bottom-2 right-2 text-[10px] px-2 py-1 rounded-full border bg-white/80">
+                  Preview: {product}
+                </div>
+              </div>
+
+              {/* แถบแสดงค่าที่เลือก */}
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block w-4 h-4 rounded border" style={{ backgroundColor: FRAME_HEX[frame] || "#DDD" }} />
+                  เฟรม: {frame}
+                </span>
+                <span>•</span>
+                {(product === "Air" || product === "DUO") && <span>มุ้ง: {meshColor}</span>}
+                {(product === "BLACKOUT" || product === "DUO") && <span>ม่าน: {blindColor}</span>}
+              </div>
+            </div>
           </div>
 
           {/* ชนิดบาน */}
@@ -199,16 +251,13 @@ function PriceCalculator() {
               onChange={(e) => {
                 const t = e.target.value;
                 setType(t);
-                // ถ้าสีเฟรมปัจจุบันไม่รองรับชนิดบานใหม่ → เซ็ตเป็นตัวแรก
                 if (!Object.keys(PRICES[t]).includes(frame)) {
                   setFrame(Object.keys(PRICES[t])[0]);
                 }
               }}
               className="w-full border rounded-lg px-3 py-2 mt-1"
             >
-              {Object.keys(PRICES).map((t) => (
-                <option key={t}>{t}</option>
-              ))}
+              {Object.keys(PRICES).map((t) => <option key={t}>{t}</option>)}
             </select>
           </div>
 
@@ -225,99 +274,111 @@ function PriceCalculator() {
                 if (!filtered.length) return null;
                 return (
                   <optgroup key={group} label={`— ${group} —`}>
-                    {filtered.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                    {filtered.map((c) => <option key={c} value={c}>{c}</option>)}
                   </optgroup>
                 );
               })}
             </select>
 
-            {/* swatch เฟรม */}
-            <div className="flex items-center gap-2 mt-2">
-              <span className="inline-block w-5 h-5 rounded border" style={{ backgroundColor: FRAME_HEX[frame] || "#DDD" }} />
-              <span className="text-xs text-gray-600">ตัวอย่างสีเฟรม: {frame}</span>
-            </div>
-
-            {/* swatch-set เฟรม (หมวดเดียวกัน) */}
+            {/* mini swatches (หมวดเดียวกัน) */}
             <div className="flex flex-wrap gap-2 mt-3">
-              {FRAME_GROUPS[currentFrameGroup]
-                .filter(c => availableFrames.includes(c))
-                .map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setFrame(c)}
-                    className={`flex items-center gap-1 px-2 py-1 rounded border text-xs
-                                ${c===frame ? 'ring-2 ring-[#FF6B35] border-[#FF6B35] bg-white' : 'hover:bg-slate-50'}`}
-                    title={c}
-                  >
-                    <span className="inline-block w-4 h-4 rounded border" style={{ backgroundColor: FRAME_HEX[c] || '#DDD' }} />
-                    {c.replace('สี','')}
-                  </button>
-                ))}
-            </div>
-          </div>
-
-          {/* สีผ้า/ตาข่าย */}
-          <div>
-            <label className="text-sm text-gray-600">{product === "Air" ? "สีมุ้ง (รุ่น Air เลือกได้: ดำ/เทา/ขาว ซีทรู)" : "สีม่าน/ตาข่าย"}</label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {meshOptions.map((name) => (
+              {FRAME_GROUPS[currentFrameGroup].filter(c => availableFrames.includes(c)).map(c => (
                 <button
-                  key={name}
+                  key={c}
                   type="button"
-                  onClick={() => setMesh(name)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded border text-sm
-                              ${name===mesh ? 'ring-2 ring-[#FF6B35] border-[#FF6B35] bg-white' : 'hover:bg-slate-50'}`}
-                  title={name}
+                  onClick={() => setFrame(c)}
+                  className={`flex items-center gap-1 px-2 py-1 rounded border text-xs
+                              ${c===frame ? 'ring-2 ring-[#FF6B35] border-[#FF6B35] bg-white' : 'hover:bg-slate-50'}`}
+                  title={c}
                 >
-                  <span
-                    className="inline-block w-5 h-5 rounded border"
-                    style={{
-                      background:
-                        name === "ขาว ซีทรู"
-                          ? `radial-gradient(#bbb 1px, #F6F6F6 1px)` // ซีทรูให้เป็นจุดๆ
-                          : name === "ดำ" ? "#1A1A1A"
-                          : name === "เทา" ? "#9EA3A8"
-                          : name === "น้ำตาล" ? "#8B5A2B"
-                          : name === "เหลือง" ? "#F2C84B"
-                          : name === "เหลืองเข้ม" ? "#D8A300"
-                          : "#F6F6F6",
-                      backgroundSize: name === "ขาว ซีทรู" ? "6px 6px" : undefined,
-                    }}
-                  />
-                  {name}
+                  <span className="inline-block w-4 h-4 rounded border" style={{ backgroundColor: FRAME_HEX[c] || '#DDD' }} />
+                  {c.replace('สี','')}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* สีมุ้ง (Air & DUO) */}
+          {(product === "Air" || product === "DUO") && (
+            <div>
+              <label className="text-sm text-gray-600">สีมุ้ง</label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {(product === "DUO" ? MESH_FOR_DUO : MESH_FOR_AIR).map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setMeshColor(name)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded border text-sm
+                                ${name===meshColor ? 'ring-2 ring-[#FF6B35] border-[#FF6B35] bg-white' : 'hover:bg-slate-50'}`}
+                    title={name}
+                  >
+                    <span
+                      className="inline-block w-5 h-5 rounded border"
+                      style={{
+                        background: name.includes("ซีทรู")
+                          ? `radial-gradient(#bbb 1px, #F6F6F6 1px)`
+                          : name === "ดำ" ? "#1A1A1A"
+                          : name === "เทา" ? "#9EA3A8"
+                          : "#F6F6F6",
+                        backgroundSize: name.includes("ซีทรู") ? "6px 6px" : undefined,
+                      }}
+                    />
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* สีม่าน (BLACKOUT & DUO) */}
+          {(product === "BLACKOUT" || product === "DUO") && (
+            <div>
+              <label className="text-sm text-gray-600">สีม่าน</label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {BLIND_COLORS.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setBlindColor(name)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded border text-sm
+                                ${name===blindColor ? 'ring-2 ring-[#FF6B35] border-[#FF6B35] bg-white' : 'hover:bg-slate-50'}`}
+                    title={name}
+                  >
+                    <span
+                      className="inline-block w-5 h-5 rounded border"
+                      style={{
+                        background:
+                          name.includes("ซีทรู") ? `radial-gradient(#bbb 1px, #F6F6F6 1px)` :
+                          name === "ดำ" ? "#1A1A1A" :
+                          name === "เทา" ? "#9EA3A8" :
+                          name === "น้ำตาล" ? "#8B5A2B" :
+                          name === "เหลือง" ? "#F2C84B" :
+                          name === "เหลืองเข้ม" ? "#D8A300" :
+                          name === "ฟ้า" ? "#6FB7FF" :
+                          "#F6F6F6",
+                        backgroundSize: name.includes("ซีทรู") ? "6px 6px" : undefined,
+                      }}
+                    />
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ขนาด & จำนวนบาน */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm text-gray-600">กว้าง (ซม.)</label>
-              <input
-                type="number" min="1" value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-              />
+              <input type="number" min="1" value={width} onChange={(e) => setWidth(Number(e.target.value))} className="w-full border rounded-lg px-3 py-2 mt-1" />
             </div>
             <div>
               <label className="text-sm text-gray-600">สูง (ซม.)</label>
-              <input
-                type="number" min="1" value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-              />
+              <input type="number" min="1" value={height} onChange={(e) => setHeight(Number(e.target.value))} className="w-full border rounded-lg px-3 py-2 mt-1" />
             </div>
             <div>
               <label className="text-sm text-gray-600">จำนวนบาน</label>
-              <input
-                type="number" min="1" value={panels}
-                onChange={(e) => setPanels(Number(e.target.value))}
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-              />
+              <input type="number" min="1" value={panels} onChange={(e) => setPanels(Number(e.target.value))} className="w-full border rounded-lg px-3 py-2 mt-1" />
             </div>
             <div className="flex items-end">
               <label className="inline-flex items-center gap-2 text-sm">
@@ -332,13 +393,18 @@ function PriceCalculator() {
           </p>
         </div>
 
-        {/* ผลลัพธ์ */}
+        {/* ผลลัพธ์ฝั่งขวา */}
         <div className="border rounded-2xl bg-white p-6 shadow-sm">
           <div className="text-sm text-gray-700 space-y-1">
             <div className="flex justify-between"><span>สินค้า</span><span>{product}</span></div>
             <div className="flex justify-between"><span>ชนิดบาน</span><span>{type}</span></div>
             <div className="flex justify-between"><span>สีเฟรม</span><span>{frame}</span></div>
-            <div className="flex justify-between"><span>{product==="Air" ? "สีมุ้ง" : "สีม่าน/ตาข่าย"}</span><span>{mesh}</span></div>
+            {(product === "Air" || product === "DUO") && (
+              <div className="flex justify-between"><span>สีมุ้ง</span><span>{meshColor}</span></div>
+            )}
+            {(product === "BLACKOUT" || product === "DUO") && (
+              <div className="flex justify-between"><span>สีม่าน</span><span>{blindColor}</span></div>
+            )}
           </div>
 
           <hr className="my-3" />
